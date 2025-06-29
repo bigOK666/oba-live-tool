@@ -1,6 +1,3 @@
-import { EVENTS, eventEmitter } from '@/utils/events'
-import { type StringFilterConfig, matchObject } from '@/utils/filter'
-import { mergeWithoutArray } from '@/utils/misc'
 import { useMemoizedFn } from 'ahooks'
 import _ from 'lodash'
 import { useMemo } from 'react'
@@ -8,8 +5,13 @@ import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import { type ChatMessage, useAIChatStore } from './useAIChat'
+import { usePrintSettings } from '@/hooks/usePrintSettings'
+import { printService } from '@/services/PrintService'
+import { EVENTS, eventEmitter } from '@/utils/events'
+import { matchObject, type StringFilterConfig } from '@/utils/filter'
+import { mergeWithoutArray } from '@/utils/misc'
 import { useAccounts } from './useAccounts'
+import { type ChatMessage, useAIChatStore } from './useAIChat'
 import { useCurrentLiveControl } from './useLiveControl'
 
 type DeepPartial<T> = T extends (...args: unknown[]) => unknown
@@ -586,6 +588,41 @@ export function useAutoReply() {
       config.blockList?.includes(comment.nick_name)
     ) {
       return
+    }
+
+    // 添加打印逻辑
+    const printSettings = usePrintSettings.getState()
+
+    // 只处理评论类型的消息
+    if (comment.msg_type === 'comment' && printSettings.enabled) {
+      // 检查是否达到打印限制
+      const limitRule = printSettings.limitRule
+      if (limitRule.enabled && printService.printCount >= limitRule.count) {
+        return
+      }
+
+      // 检查是否符合打印规则
+      const shouldPrint = printSettings.rules.some(rule => {
+        if (!rule.enabled) return false
+
+        switch (rule.type) {
+          case 'exact-match':
+            return comment.content === rule.pattern
+          case 'contains':
+            return comment.content.includes(rule.pattern)
+          case 'regex':
+            try {
+              const regex = new RegExp(rule.pattern)
+              return regex.test(comment.content)
+            } catch (e) {
+              return false
+            }
+        }
+      })
+
+      if (shouldPrint) {
+        printService.printComment(comment, printSettings.options)
+      }
     }
 
     switch (comment.msg_type) {
