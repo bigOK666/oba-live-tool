@@ -1,15 +1,5 @@
 import { createLogger } from '@/lib/logger'
 
-// 声明CLodop全局变量
-declare global {
-  interface Window {
-    CLODOP: {
-      GET_LODOP(): unknown
-    }
-    LODOP: unknown
-  }
-}
-
 export interface PrinterInfo {
   name: string
   id: number
@@ -27,7 +17,7 @@ export class PrintService {
   private static instance: PrintService
   private isReady = false
   private logger = createLogger('打印服务')
-  private printCount = 0
+  private _printCount = 0
   private printedCommentIds = new Set<string>()
 
   constructor() {
@@ -129,7 +119,7 @@ export class PrintService {
     }
 
     this.printedCommentIds.add(comment.msg_id)
-    this.printCount++
+    this._printCount++
 
     try {
       const LODOP = window.CLODOP.GET_LODOP()
@@ -158,7 +148,7 @@ export class PrintService {
 
       // 添加序号
       if (options.showOrderNumber) {
-        LODOP.ADD_PRINT_TEXT(currentY, 10, 260, 20, `序号：${this.printCount}`)
+        LODOP.ADD_PRINT_TEXT(currentY, 10, 260, 20, `序号：${this._printCount}`)
         LODOP.SET_PRINT_STYLEA(0, 'FontSize', 10)
         currentY += 20
       }
@@ -183,7 +173,7 @@ export class PrintService {
           10,
           260,
           20,
-          `用户ID：${comment.user_id}`,
+          `用户ID：${(comment as any).user_id}`,
         )
         LODOP.SET_PRINT_STYLEA(0, 'FontSize', 10)
         currentY += 20
@@ -219,15 +209,15 @@ export class PrintService {
 
   // 重置打印计数和记录
   resetPrintCount() {
-    this.printCount = 0
+    this._printCount = 0
     this.printedCommentIds.clear()
     this.logger.info('打印计数已重置')
     return true
   }
 
   // 获取当前打印计数
-  getPrintCount() {
-    return this.printCount
+  getPrintCount(): number {
+    return this._printCount
   }
 }
 

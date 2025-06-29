@@ -88,7 +88,6 @@ export default function PrintSettings() {
           nick_name: '测试用户',
           content: '这是一条测试评论 #打印 内容',
           time: new Date().toLocaleTimeString(),
-          user_id: '123456',
         },
         options,
       )

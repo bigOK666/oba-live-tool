@@ -597,7 +597,10 @@ export function useAutoReply() {
     if (comment.msg_type === 'comment' && printSettings.enabled) {
       // 检查是否达到打印限制
       const limitRule = printSettings.limitRule
-      if (limitRule.enabled && printService.printCount >= limitRule.count) {
+      if (
+        limitRule.enabled &&
+        printService.getPrintCount() >= limitRule.count
+      ) {
         return
       }
 
