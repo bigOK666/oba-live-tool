@@ -29,8 +29,6 @@ interface LODOP_Object {
 }
 
 declare interface Window {
-  CLODOP: {
-    GET_LODOP(): LODOP_Object
-  }
-  LODOP: LODOP_Object
+  getCLodop?: () => LODOP_Object
+  LODOP?: LODOP_Object
 }

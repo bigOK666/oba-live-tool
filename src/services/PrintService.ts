@@ -32,44 +32,68 @@ export class PrintService {
   }
 
   async init() {
+    this.logger.info('[打印服务] 开始初始化打印服务...')
     try {
       await this.loadCLodop()
+
+      const maxRetries = 40
+      let retries = 0
+
+      const lodopReady = await new Promise((resolve, reject) => {
+        const timer = setInterval(() => {
+          const lodop = (window as any).getCLodop?.()
+          if (lodop && lodop.VERSION) {
+            clearInterval(timer)
+            resolve(true)
+          } else {
+            retries++
+            if (retries > maxRetries) {
+              clearInterval(timer)
+              reject(new Error('等待 CLODOP 对象超时（超过 8 秒）'))
+            }
+          }
+        }, 200)
+      })
+
       this.isReady = true
-      this.logger.success('打印服务初始化成功')
+      this.logger.success('[打印服务] 打印服务初始化成功')
     } catch (error) {
       this.isReady = false
-      this.logger.error('打印服务初始化失败', error)
+      this.logger.error('[打印服务] 打印服务初始化失败', error)
     }
-    return this.isReady
   }
 
-  private async loadCLodop() {
+  private async loadCLodop(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      if (window.CLODOP) {
+      if (window.getCLodop) {
+        this.logger.info('getCLodop 已存在，跳过脚本加载')
         resolve()
         return
       }
 
-      const head = document.head
       const script = document.createElement('script')
-      script.src = 'http://localhost:8000/CLodopfuncs.js' // 本地CLodop服务地址
+      script.src = 'http://localhost:8000/CLodopfuncs.js'
       script.type = 'text/javascript'
 
       script.onload = () => {
-        if (window.CLODOP) {
+        this.logger.info('CLodopfuncs.js 加载成功')
+        if (window.getCLodop) {
           resolve()
         } else {
-          reject(
-            new Error('未能加载CLODOP对象，请检查是否安装了C-Lodop打印控件'),
-          )
+          reject(new Error('CLodopfuncs.js 加载成功但未定义 getCLodop 函数'))
         }
       }
 
-      script.onerror = () => {
-        reject(new Error('加载C-Lodop脚本失败，请检查网络连接和脚本地址'))
+      script.onerror = err => {
+        this.logger.error('CLodopfuncs.js 加载失败，请检查服务是否启动')
+        reject(
+          new Error(
+            '无法加载 CLODOP 脚本（http://localhost:8000/CLodopfuncs.js）',
+          ),
+        )
       }
 
-      head.appendChild(script)
+      document.head.appendChild(script)
     })
   }
 
@@ -77,13 +101,13 @@ export class PrintService {
    * 获取可用打印机列表
    */
   getPrinters(): PrinterInfo[] {
-    if (!this.isReady || !window.CLODOP) {
+    if (!this.isReady || !window.getCLodop) {
       this.logger.error('打印服务未准备好，无法获取打印机列表')
       return []
     }
 
     try {
-      const LODOP = window.CLODOP.GET_LODOP()
+      const LODOP = window.getCLodop()
       if (!LODOP) {
         this.logger.error('未能获取LODOP对象')
         return []
@@ -108,7 +132,7 @@ export class PrintService {
    * 打印评论信息
    */
   printComment(comment: DouyinLiveMessage, options: PrintOptions): boolean {
-    if (!this.isReady || !window.CLODOP) {
+    if (!this.isReady || !window.getCLodop) {
       this.logger.error('打印服务未准备好')
       return false
     }
@@ -122,7 +146,7 @@ export class PrintService {
     this._printCount++
 
     try {
-      const LODOP = window.CLODOP.GET_LODOP()
+      const LODOP = window.getCLodop()
 
       if (!LODOP) {
         this.logger.error('未能获取LODOP对象，请检查CLodop是否正确安装运行')
