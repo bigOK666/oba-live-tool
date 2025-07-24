@@ -114,7 +114,7 @@ export default function PrintSettings() {
           content: '这是一条测试评论 #打印 内容',
           time: new Date().toLocaleTimeString(),
           user_id: '123456789', // 添加测试用户ID
-        },
+        } as any, // 使用any类型绕过类型检查
         printOptions,
       )
 
