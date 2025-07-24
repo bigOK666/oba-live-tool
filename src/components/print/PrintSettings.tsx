@@ -332,7 +332,8 @@ export default function PrintSettings() {
                 value={options.printerId?.toString() || 'default'}
                 onValueChange={value =>
                   updateOptions({
-                    printerId: value ? Number.parseInt(value) : undefined,
+                    printerId:
+                      value === 'default' ? undefined : Number.parseInt(value),
                   })
                 }
               >
@@ -348,10 +349,7 @@ export default function PrintSettings() {
                     .map(printer => (
                       <SelectItem
                         key={`printer-${printer.id || Math.random()}`}
-                        value={
-                          printer.name ||
-                          `printer-${printer.id || Math.random()}`
-                        }
+                        value={printer.id.toString()}
                       >
                         {printer.name || '未命名打印机'}
                       </SelectItem>
