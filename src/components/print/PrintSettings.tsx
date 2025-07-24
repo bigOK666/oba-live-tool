@@ -136,11 +136,10 @@ export default function PrintSettings() {
 
       <CardContent className="space-y-6">
         <Tabs defaultValue="rules">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="rules">触发规则</TabsTrigger>
             <TabsTrigger value="limits">打印限制</TabsTrigger>
             <TabsTrigger value="options">打印选项</TabsTrigger>
-            <TabsTrigger value="printer">打印机</TabsTrigger>
           </TabsList>
 
           <TabsContent value="rules" className="space-y-4">
@@ -266,55 +265,8 @@ export default function PrintSettings() {
           </TabsContent>
 
           <TabsContent value="options" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={showNicknameId}
-                  checked={options.showNickname}
-                  onCheckedChange={checked =>
-                    updateOptions({ showNickname: !!checked })
-                  }
-                />
-                <Label htmlFor={showNicknameId}>显示用户昵称</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={showTimeId}
-                  checked={options.showTime}
-                  onCheckedChange={checked =>
-                    updateOptions({ showTime: !!checked })
-                  }
-                />
-                <Label htmlFor={showTimeId}>显示评论时间</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={showUserIdId}
-                  checked={options.showUserId}
-                  onCheckedChange={checked =>
-                    updateOptions({ showUserId: !!checked })
-                  }
-                />
-                <Label htmlFor={showUserIdId}>显示用户ID</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={showOrderNumberId}
-                  checked={options.showOrderNumber}
-                  onCheckedChange={checked =>
-                    updateOptions({ showOrderNumber: !!checked })
-                  }
-                />
-                <Label htmlFor={showOrderNumberId}>显示序号</Label>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="printer" className="space-y-4">
-            <div className="space-y-4">
+            {/* Printer selection section (moved from printer tab) */}
+            <div className="space-y-4 mb-6">
               <div className="flex items-center justify-between">
                 <Label>选择打印机</Label>
                 <Button
@@ -365,6 +317,53 @@ export default function PrintSettings() {
 
               <div className="text-sm text-muted-foreground mt-2">
                 提示：如果打印机列表为空，请确保已安装并启动CLodop打印服务
+              </div>
+            </div>
+
+            {/* Original print options content */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={showNicknameId}
+                  checked={options.showNickname}
+                  onCheckedChange={checked =>
+                    updateOptions({ showNickname: !!checked })
+                  }
+                />
+                <Label htmlFor={showNicknameId}>显示用户昵称</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={showTimeId}
+                  checked={options.showTime}
+                  onCheckedChange={checked =>
+                    updateOptions({ showTime: !!checked })
+                  }
+                />
+                <Label htmlFor={showTimeId}>显示评论时间</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={showUserIdId}
+                  checked={options.showUserId}
+                  onCheckedChange={checked =>
+                    updateOptions({ showUserId: !!checked })
+                  }
+                />
+                <Label htmlFor={showUserIdId}>显示用户ID</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id={showOrderNumberId}
+                  checked={options.showOrderNumber}
+                  onCheckedChange={checked =>
+                    updateOptions({ showOrderNumber: !!checked })
+                  }
+                />
+                <Label htmlFor={showOrderNumberId}>显示序号</Label>
               </div>
             </div>
           </TabsContent>
