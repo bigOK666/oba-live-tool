@@ -22,7 +22,22 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { type PrintRule, usePrintSettings } from '@/hooks/usePrintSettings'
-import { type PrinterInfo, printService } from '@/services/PrintService'
+import {
+  PaperSizeType,
+  type PrinterInfo,
+  printService,
+} from '@/services/PrintService'
+
+// 纸张类型名称映射
+const PAPER_TYPE_NAMES: Record<PaperSizeType, string> = {
+  [PaperSizeType.CUSTOM]: '自定义尺寸',
+  [PaperSizeType.THERMAL]: '热敏纸',
+  [PaperSizeType.A4]: 'A4纸',
+  [PaperSizeType.A5]: 'A5纸',
+  [PaperSizeType.B5]: 'B5纸',
+  [PaperSizeType.LETTER]: '信纸',
+  [PaperSizeType.LEGAL]: '法律专用纸',
+}
 
 export default function PrintSettings() {
   const {
@@ -45,6 +60,9 @@ export default function PrintSettings() {
   } | null>(null)
   const [printers, setPrinters] = useState<PrinterInfo[]>([])
   const [printCount, setPrintCount] = useState(0)
+  const [showCustomSize, setShowCustomSize] = useState(
+    (options.paperSizeType ?? PaperSizeType.THERMAL) === PaperSizeType.CUSTOM,
+  )
 
   // 生成唯一ID
   const id = useId()
@@ -81,6 +99,13 @@ export default function PrintSettings() {
     setLoading(true)
     try {
       await printService.init()
+      // 确保所有必要的选项都有默认值
+      const printOptions = {
+        ...options,
+        paperSizeType: options.paperSizeType ?? PaperSizeType.THERMAL,
+        customPaperSize: options.customPaperSize ?? { width: 800, height: 30 },
+      }
+
       const success = printService.printComment(
         {
           msg_type: 'comment',
@@ -88,8 +113,9 @@ export default function PrintSettings() {
           nick_name: '测试用户',
           content: '这是一条测试评论 #打印 内容',
           time: new Date().toLocaleTimeString(),
+          user_id: '123456789', // 添加测试用户ID
         },
-        options,
+        printOptions,
       )
 
       setTestStatus({
@@ -113,6 +139,24 @@ export default function PrintSettings() {
   const handleResetPrintCount = () => {
     printService.resetPrintCount()
     setPrintCount(0)
+  }
+
+  // 处理纸张类型变更
+  const handlePaperTypeChange = (value: string) => {
+    const paperType = Number(value) as PaperSizeType
+    updateOptions({ paperSizeType: paperType })
+    setShowCustomSize(paperType === PaperSizeType.CUSTOM)
+  }
+
+  // 处理自定义尺寸变更
+  const handleCustomSizeChange = (field: 'width' | 'height', value: string) => {
+    const numValue = Number(value) || 0
+    updateOptions({
+      customPaperSize: {
+        ...options.customPaperSize!,
+        [field]: numValue,
+      },
+    })
   }
 
   return (
@@ -313,6 +357,62 @@ export default function PrintSettings() {
                 <p className="text-sm text-amber-600">
                   未检测到打印机，请确保CLodop服务已启动并且打印机已连接
                 </p>
+              )}
+
+              {/* 添加纸张类型选择 */}
+              <div className="mt-4">
+                <Label>纸张类型</Label>
+                <Select
+                  value={(
+                    options.paperSizeType ?? PaperSizeType.THERMAL
+                  ).toString()}
+                  onValueChange={handlePaperTypeChange}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="选择纸张类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAPER_TYPE_NAMES).map(([value, name]) => (
+                      <SelectItem key={value} value={value}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 自定义纸张尺寸 */}
+              {showCustomSize && (
+                <div className="mt-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>宽度 (十分之一毫米)</Label>
+                    <Input
+                      type="number"
+                      value={options.customPaperSize?.width || 800}
+                      onChange={e =>
+                        handleCustomSizeChange('width', e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      800 = 80毫米
+                    </div>
+                  </div>
+                  <div>
+                    <Label>高度 (十分之一毫米)</Label>
+                    <Input
+                      type="number"
+                      value={options.customPaperSize?.height || 30}
+                      onChange={e =>
+                        handleCustomSizeChange('height', e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      30 = 3毫米
+                    </div>
+                  </div>
+                </div>
               )}
 
               <div className="text-sm text-muted-foreground mt-2">

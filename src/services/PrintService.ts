@@ -5,12 +5,31 @@ export interface PrinterInfo {
   id: number
 }
 
+// 定义纸张类型枚举
+export enum PaperSizeType {
+  CUSTOM = 0, // 自定义尺寸
+  THERMAL = 3, // 热敏纸 (默认)
+  A4 = 9, // A4纸
+  A5 = 11, // A5纸
+  B5 = 13, // B5纸
+  LETTER = 1, // 信纸
+  LEGAL = 5, // 法律专用纸
+}
+
+// 定义纸张尺寸接口
+export interface PaperSize {
+  width: number
+  height: number
+}
+
 export interface PrintOptions {
   showNickname: boolean
   showTime: boolean
   showUserId: boolean
   showOrderNumber: boolean
   printerId?: number // 选择的打印机ID
+  paperSizeType: PaperSizeType // 纸张类型
+  customPaperSize?: PaperSize // 自定义纸张尺寸
 }
 
 export class PrintService {
@@ -160,7 +179,31 @@ export class PrintService {
         LODOP.SET_PRINTER_INDEX(options.printerId)
       }
 
-      LODOP.SET_PRINT_PAGESIZE(3, 800, 30, '') // 设置为热敏纸模式
+      // 设置纸张类型和尺寸
+      if (
+        options.paperSizeType === PaperSizeType.CUSTOM &&
+        options.customPaperSize
+      ) {
+        // 自定义纸张尺寸
+        LODOP.SET_PRINT_PAGESIZE(
+          0, // 自定义纸张
+          options.customPaperSize.width,
+          options.customPaperSize.height,
+          '',
+        )
+      } else {
+        // 使用预定义纸张类型
+        const paperWidth =
+          options.paperSizeType === PaperSizeType.THERMAL ? 800 : 0
+        const paperHeight =
+          options.paperSizeType === PaperSizeType.THERMAL ? 30 : 0
+        LODOP.SET_PRINT_PAGESIZE(
+          options.paperSizeType,
+          paperWidth,
+          paperHeight,
+          '',
+        )
+      }
 
       // 添加标题
       LODOP.ADD_PRINT_TEXT(10, 10, 260, 30, '直播间评论')

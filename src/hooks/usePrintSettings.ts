@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { type PaperSize, PaperSizeType } from '@/services/PrintService'
 
 export interface PrinterInfo {
   name: string
@@ -24,6 +25,8 @@ export interface PrintOptions {
   showUserId: boolean
   showOrderNumber: boolean
   printerId?: number
+  paperSizeType: PaperSizeType
+  customPaperSize?: PaperSize
 }
 
 interface PrintSettingsState {
@@ -63,6 +66,8 @@ export const usePrintSettings = create<PrintSettingsState>()(
         showUserId: false,
         showOrderNumber: true,
         printerId: undefined,
+        paperSizeType: PaperSizeType.THERMAL,
+        customPaperSize: { width: 800, height: 30 },
       },
 
       setEnabled: enabled => set({ enabled }),
