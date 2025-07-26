@@ -151,16 +151,34 @@ export class PrintService {
    * 打印评论信息
    */
   printComment(comment: DouyinLiveMessage, options: PrintOptions): boolean {
+    this.logger.info('[PrintService] 开始打印评论', {
+      comment: {
+        msg_id: comment.msg_id,
+        content:
+          comment.msg_type === 'comment' ? comment.content : '非评论消息',
+        nick_name: comment.nick_name,
+        msg_type: comment.msg_type,
+      },
+      options,
+      isReady: this.isReady,
+      hasGetCLodop: !!window.getCLodop,
+    })
+
     if (!this.isReady || !window.getCLodop) {
-      this.logger.error('打印服务未准备好')
+      this.logger.error('[PrintService] 打印服务未准备好', {
+        isReady: this.isReady,
+        hasGetCLodop: !!window.getCLodop,
+      })
       return false
     }
 
     // 记录已打印的评论ID，避免重复打印
     if (this.printedCommentIds.has(comment.msg_id)) {
+      this.logger.warn('[PrintService] 评论已打印过，跳过', comment.msg_id)
       return false
     }
 
+    this.logger.debug('[PrintService] 评论通过重复检查，准备打印')
     this.printedCommentIds.add(comment.msg_id)
     this._printCount++
 
@@ -168,10 +186,13 @@ export class PrintService {
       const LODOP = window.getCLodop()
 
       if (!LODOP) {
-        this.logger.error('未能获取LODOP对象，请检查CLodop是否正确安装运行')
+        this.logger.error(
+          '[PrintService] 未能获取LODOP对象，请检查CLodop是否正确安装运行',
+        )
         return false
       }
 
+      this.logger.debug('[PrintService] 开始配置打印参数...')
       LODOP.PRINT_INIT('直播评论打印')
 
       // 设置打印机

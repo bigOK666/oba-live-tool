@@ -13,7 +13,7 @@ import path from 'node:path'
 //
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { BrowserWindow, app, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 
 import { IPC_CHANNELS } from 'shared/ipcChannels'
 import { createLogger } from './logger'
@@ -95,13 +95,13 @@ async function createWindow() {
         )
 
         // 获取 CHANGELOG.md
-        const releaseNote = await fetchChangelog() // html
+        //const releaseNote = await fetchChangelog() // html
 
-        windowManager.send(IPC_CHANNELS.app.notifyUpdate, {
-          currentVersion,
-          latestVersion,
-          releaseNote,
-        })
+        //windowManager.send(IPC_CHANNELS.app.notifyUpdate, {
+        //  currentVersion,
+        //  latestVersion,
+        //  releaseNote,
+        //})
       }
     } catch (err) {
       logger.debug(`检查更新失败：${err}`)

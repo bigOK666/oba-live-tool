@@ -579,6 +579,15 @@ export function useAutoReply() {
       config,
     } = currentContext
 
+    // 调试日志：收到新评论
+    console.log('🔍 [打印调试] 收到新评论:', {
+      content: comment.msg_type === 'comment' ? comment.content : '非评论消息',
+      msg_type: comment.msg_type,
+      nick_name: comment.nick_name,
+      time: comment.time,
+      msg_id: comment.msg_id,
+    })
+
     store.addComment(accountId, comment)
     if (
       !isRunning ||
@@ -587,47 +596,124 @@ export function useAutoReply() {
       // 在黑名单也跳过
       config.blockList?.includes(comment.nick_name)
     ) {
+      console.log('🚫 [打印调试] 评论被跳过:', {
+        isRunning,
+        isStreamer: comment.nick_name === accountName,
+        inBlockList: config.blockList?.includes(comment.nick_name),
+        accountName,
+      })
       return
     }
 
     // 添加打印逻辑
     const printSettings = usePrintSettings.getState()
 
+    // 调试日志：打印设置状态
+    console.log('⚙️ [打印调试] 当前打印设置:', {
+      enabled: printSettings.enabled,
+      rules: printSettings.rules,
+      limitRule: printSettings.limitRule,
+      currentPrintCount: printService.getPrintCount(),
+      options: printSettings.options,
+    })
+
     // 只处理评论类型的消息
+    console.log('消息类型 ', comment.msg_type)
+    console.log('开启打印 ', printSettings.enabled)
     if (comment.msg_type === 'comment' && printSettings.enabled) {
       // 检查是否达到打印限制
       const limitRule = printSettings.limitRule
+      console.log('📊 [打印调试] 检查打印限制:', {
+        limitEnabled: limitRule.enabled,
+        limitCount: limitRule.count,
+        currentCount: printService.getPrintCount(),
+        reachedLimit:
+          limitRule.enabled && printService.getPrintCount() >= limitRule.count,
+      })
+
       if (
         limitRule.enabled &&
         printService.getPrintCount() >= limitRule.count
       ) {
+        console.log('🛑 [打印调试] 已达到打印限制，跳过打印')
         return
       }
 
       // 检查是否符合打印规则
-      const shouldPrint = printSettings.rules.some(rule => {
-        if (!rule.enabled) return false
+      const ruleResults = printSettings.rules.map(rule => {
+        if (!rule.enabled) {
+          return { rule, enabled: false, matched: false, reason: '规则未启用' }
+        }
+
+        let matched = false
+        let reason = ''
 
         switch (rule.type) {
           case 'exact-match':
-            return comment.content === rule.pattern
+            matched = comment.content === rule.pattern
+            reason = matched
+              ? '完全匹配成功'
+              : `完全匹配失败: "${comment.content}" !== "${rule.pattern}"`
+            break
           case 'contains':
-            return comment.content.includes(rule.pattern)
+            matched = comment.content.includes(rule.pattern)
+            reason = matched
+              ? '包含匹配成功'
+              : `包含匹配失败: "${comment.content}" 不包含 "${rule.pattern}"`
+            break
           case 'regex':
             try {
               const regex = new RegExp(rule.pattern)
-              return regex.test(comment.content)
-            } catch (e) {
-              return false
+              matched = regex.test(comment.content)
+              reason = matched
+                ? '正则匹配成功'
+                : `正则匹配失败: "${comment.content}" 不匹配 /${rule.pattern}/`
+            } catch (e: unknown) {
+              matched = false
+              const msg = e instanceof Error ? e.message : String(e)
+              reason = `正则表达式错误: ${msg}`
             }
+            break
         }
+
+        return { rule, enabled: rule.enabled, matched, reason }
+      })
+
+      console.log('🔍 [打印调试] 规则匹配结果:', ruleResults)
+
+      // 检查是否有启用的规则
+      const hasEnabledRules = ruleResults.some(result => result.enabled)
+      const hasMatchedRules = ruleResults.some(
+        result => result.enabled && result.matched,
+      )
+
+      // 当没有匹配规则开启的时候，所有的评论都要打印
+      const shouldPrint = !hasEnabledRules || hasMatchedRules
+
+      console.log('🎯 [打印调试] 最终打印决策:', {
+        shouldPrint,
+        hasEnabledRules,
+        hasMatchedRules,
+        matchedRules: ruleResults.filter(r => r.enabled && r.matched),
+        comment: comment.content,
       })
 
       if (shouldPrint) {
-        printService.printComment(comment, printSettings.options)
+        console.log('🖨️ [打印调试] 开始执行打印...')
+        const printResult = printService.printComment(
+          comment,
+          printSettings.options,
+        )
+        console.log('✅ [打印调试] 打印执行结果:', printResult)
+      } else {
+        console.log('❌ [打印调试] 不符合打印条件，跳过打印')
       }
+    } else {
+      console.log('🚫 [打印调试] 不满足打印基本条件:', {
+        isComment: comment.msg_type === 'comment',
+        printEnabled: printSettings.enabled,
+      })
     }
-
     switch (comment.msg_type) {
       case 'comment': {
         // 优先尝试关键字回复
