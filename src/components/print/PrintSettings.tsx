@@ -1,5 +1,5 @@
 import { PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
-import React, { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -71,6 +71,9 @@ export default function PrintSettings() {
   const showTimeId = `show-time-${id}`
   const showUserIdId = `show-userid-${id}`
   const showOrderNumberId = `show-order-number-${id}`
+  const usernameFontSizeId = useId()
+  const orderFontSizeId = useId()
+  const commentFontSizeId = useId()
 
   // 使用useCallback包装loadPrinters函数
   const loadPrinters = useCallback(async () => {
@@ -153,7 +156,7 @@ export default function PrintSettings() {
     const numValue = Number(value) || 0
     updateOptions({
       customPaperSize: {
-        ...options.customPaperSize!,
+        ...(options.customPaperSize || { width: 800, height: 30 }),
         [field]: numValue,
       },
     })
@@ -464,6 +467,61 @@ export default function PrintSettings() {
                   }
                 />
                 <Label htmlFor={showOrderNumberId}>显示序号</Label>
+              </div>
+            </div>
+
+            {/* 字体大小设置 */}
+            <div className="space-y-4">
+              <Label className="text-base font-medium">字体大小设置</Label>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={usernameFontSizeId}>用户名字体大小</Label>
+                  <Input
+                    id={usernameFontSizeId}
+                    type="number"
+                    min="6"
+                    max="72"
+                    value={options.usernameFontSize || 10}
+                    onChange={e =>
+                      updateOptions({
+                        usernameFontSize: Number(e.target.value),
+                      })
+                    }
+                    className="w-20"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={orderFontSizeId}>序号字体大小</Label>
+                  <Input
+                    id={orderFontSizeId}
+                    type="number"
+                    min="6"
+                    max="72"
+                    value={options.orderNumberFontSize || 15}
+                    onChange={e =>
+                      updateOptions({
+                        orderNumberFontSize: Number(e.target.value),
+                      })
+                    }
+                    className="w-20"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={commentFontSizeId}>评论字体大小</Label>
+                  <Input
+                    id={commentFontSizeId}
+                    type="number"
+                    min="6"
+                    max="72"
+                    value={options.commentFontSize || 10}
+                    onChange={e =>
+                      updateOptions({ commentFontSize: Number(e.target.value) })
+                    }
+                    className="w-20"
+                  />
+                </div>
               </div>
             </div>
           </TabsContent>

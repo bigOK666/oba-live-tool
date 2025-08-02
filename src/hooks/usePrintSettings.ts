@@ -27,6 +27,10 @@ export interface PrintOptions {
   printerId?: number
   paperSizeType: PaperSizeType
   customPaperSize?: PaperSize
+  // 字体大小设置
+  usernameFontSize?: number
+  orderNumberFontSize?: number
+  commentFontSize?: number
 }
 
 interface PrintSettingsState {
@@ -62,7 +66,7 @@ export const usePrintSettings = create<PrintSettingsState>()(
       },
       options: {
         showNickname: true,
-        showTime: true,
+        showTime: false,
         showUserId: false,
         showOrderNumber: true,
         printerId: undefined,

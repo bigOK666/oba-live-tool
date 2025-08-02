@@ -30,6 +30,10 @@ export interface PrintOptions {
   printerId?: number // 选择的打印机ID
   paperSizeType: PaperSizeType // 纸张类型
   customPaperSize?: PaperSize // 自定义纸张尺寸
+  // 字体大小设置
+  usernameFontSize?: number
+  orderNumberFontSize?: number
+  commentFontSize?: number
 }
 
 export class PrintService {
@@ -150,6 +154,9 @@ export class PrintService {
   /**
    * 打印评论信息
    */
+  /**
+   * 打印评论信息
+   */
   printComment(comment: DouyinLiveMessage, options: PrintOptions): boolean {
     this.logger.info('[PrintService] 开始打印评论', {
       comment: {
@@ -226,32 +233,48 @@ export class PrintService {
         )
       }
 
-      // 添加标题
-      LODOP.ADD_PRINT_TEXT(10, 10, 260, 30, '直播间评论')
-      LODOP.SET_PRINT_STYLEA(0, 'FontSize', 12)
-      LODOP.SET_PRINT_STYLEA(0, 'Bold', 1)
-      LODOP.SET_PRINT_STYLEA(0, 'Alignment', 2) // 居中
-
-      let currentY = 40
+      let currentY = 0
+      let printItemIndex = 1 // LODOP 打印项索引通常从1开始
 
       // 添加序号
       if (options.showOrderNumber) {
-        LODOP.ADD_PRINT_TEXT(currentY, 10, 260, 20, `序号：${this._printCount}`)
-        LODOP.SET_PRINT_STYLEA(0, 'FontSize', 10)
-        currentY += 20
-      }
-
-      // 添加用户名
-      if (options.showNickname) {
+        const orderFontSize = options.orderNumberFontSize || 15
+        const orderHeight = Math.max(20, orderFontSize + 5)
+        this.logger.debug(
+          `[PrintService] 添加序号，索引: ${printItemIndex}, 字体大小: ${orderFontSize}`,
+        )
         LODOP.ADD_PRINT_TEXT(
           currentY,
           10,
           260,
-          20,
-          `用户：${comment.nick_name}`,
+          orderHeight,
+          `${this._printCount}`,
         )
-        LODOP.SET_PRINT_STYLEA(0, 'FontSize', 10)
-        currentY += 20
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontSize', orderFontSize)
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'Bold', 1)
+        printItemIndex++ // 递增索引
+        currentY += orderHeight
+      }
+
+      // 添加用户名
+      if (options.showNickname) {
+        const usernameFontSize = options.usernameFontSize || 10
+        const usernameHeight = Math.max(20, usernameFontSize + 5)
+        this.logger.debug(
+          `[PrintService] 添加用户名，索引: ${printItemIndex}, 字体大小: ${usernameFontSize}`,
+        )
+        LODOP.ADD_PRINT_TEXT(
+          currentY,
+          10,
+          260,
+          usernameHeight,
+          `${comment.nick_name}`,
+        )
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontSize', usernameFontSize)
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'Bold', 0) // 明确设置为非粗体
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontName', 'Arial') // 明确指定字体
+        printItemIndex++ // 递增索引
+        currentY += usernameHeight
       }
 
       // 添加用户ID
@@ -261,23 +284,36 @@ export class PrintService {
           10,
           260,
           20,
-          `用户ID：${(comment as any).user_id}`,
+          `${(comment as any).user_id}`,
         )
-        LODOP.SET_PRINT_STYLEA(0, 'FontSize', 10)
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontSize', 10)
+        printItemIndex++
         currentY += 20
       }
 
       // 添加评论内容
       if (comment.msg_type === 'comment') {
-        LODOP.ADD_PRINT_TEXT(currentY, 10, 260, 60, `评论：${comment.content}`)
-        LODOP.SET_PRINT_STYLEA(0, 'FontSize', 10)
-        currentY += 60
+        const commentFontSize = options.commentFontSize || 10
+        const commentHeight = Math.max(60, commentFontSize * 3 + 10)
+        LODOP.ADD_PRINT_TEXT(
+          currentY,
+          10,
+          260,
+          commentHeight,
+          `${comment.content}`,
+        )
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontSize', commentFontSize)
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'Bold', 0) // 确保非粗体
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontName', 'Arial') // 使用相同字体
+        printItemIndex++
+        currentY += commentHeight
       }
 
       // 添加时间
       if (options.showTime) {
-        LODOP.ADD_PRINT_TEXT(currentY, 10, 260, 20, `时间：${comment.time}`)
-        LODOP.SET_PRINT_STYLEA(0, 'FontSize', 8)
+        LODOP.ADD_PRINT_TEXT(currentY, 10, 260, 20, `${comment.time}`)
+        LODOP.SET_PRINT_STYLEA(printItemIndex, 'FontSize', 8)
+        printItemIndex++
         currentY += 20
       }
 
